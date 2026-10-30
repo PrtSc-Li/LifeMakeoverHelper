@@ -10,10 +10,19 @@ var Router = (function () {
 
   var routes = {};
   var currentRoute = null;
-  var defaultRoute = 'expense';
+  var TAB_VISIBILITY_KEY = 'tab_visibility';
+
+  function isTabVisible(id) {
+    if (id !== 'outfits' && id !== 'notes') return true;
+    return Storage.get(TAB_VISIBILITY_KEY, {})[id] !== false;
+  }
+
+  function defaultRoute() {
+    return isTabVisible('outfits') ? 'outfits' : (isTabVisible('notes') ? 'notes' : 'profile');
+  }
 
   function parse() {
-    var hash = window.location.hash.replace('#', '') || '/' + defaultRoute;
+    var hash = window.location.hash.replace('#', '') || '/' + defaultRoute();
     if (hash[0] === '/') hash = hash.slice(1);
     var parts = hash.split('/');
     var route = parts[0];
@@ -34,7 +43,7 @@ var Router = (function () {
     var parsed = parse();
     var def = routes[parsed.route];
     if (!def) {
-      window.location.hash = '#/' + defaultRoute;
+      window.location.hash = '#/' + defaultRoute();
       return;
     }
     currentRoute = parsed.route;
@@ -59,7 +68,7 @@ var Router = (function () {
     var tabs = document.querySelectorAll('.tab-item');
     tabs.forEach(function (tab) {
       var tabRoute = tab.getAttribute('data-route');
-      if (tabRoute === route || (route === defaultRoute && tabRoute === defaultRoute)) {
+      if (tabRoute === route) {
         tab.classList.add('active');
       } else {
         tab.classList.remove('active');
@@ -72,13 +81,14 @@ var Router = (function () {
     var tabBar = document.getElementById('tab-bar');
     if (!tabBar) return;
 
-    var tabs = ToolRegistry.getTabs();
+    var tabs = ToolRegistry.getTabs().filter(function (tool) { return isTabVisible(tool.id); });
     tabBar.innerHTML = tabs.map(function (tool) {
       return '<button class="tab-item" data-route="' + tool.id + '">' +
         (tool.tabIcon || '<span class="tab-emoji">' + tool.icon + '</span>') +
         '<span class="tab-label">' + tool.title + '</span>' +
       '</button>';
     }).join('');
+    updateTabBar(currentRoute);
 
     // 绑定点击
     tabBar.querySelectorAll('.tab-item').forEach(function (tab) {
@@ -94,13 +104,23 @@ var Router = (function () {
   window.addEventListener('DOMContentLoaded', function () {
     buildTabBar();
     if (!window.location.hash) {
-      window.location.hash = '#/' + defaultRoute;
+      window.location.hash = '#/' + defaultRoute();
     } else {
       dispatch();
     }
   });
 
   return {
+    isTabVisible: isTabVisible,
+
+    setTabVisible: function (id, visible) {
+      if (id !== 'outfits' && id !== 'notes') return;
+      var preferences = Storage.get(TAB_VISIBILITY_KEY, {});
+      preferences[id] = visible;
+      Storage.set(TAB_VISIBILITY_KEY, preferences);
+      buildTabBar();
+    },
+
     register: function (name, def) {
       routes[name] = def;
     },

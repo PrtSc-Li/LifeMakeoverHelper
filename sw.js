@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const CACHE_NAME = 'yishan-closet-v1';
+const CACHE_NAME = 'yishan-closet-v4';
 
 const BASE = self.registration.scope;
 
@@ -22,6 +22,7 @@ const PRECACHE_URLS = [
   BASE + 'js/tools/outfits.js',
   BASE + 'js/tools/profile.js',
   BASE + 'js/tools/notes.js',
+  BASE + 'js/diamond-chart.js',
   BASE + 'manifest.json',
   BASE + 'icons/icon-192x192.png',
   BASE + 'icons/icon-512x512.png'

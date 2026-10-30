@@ -64,6 +64,14 @@
             '<span>深色模式</span>'+
             '<label class="toggle"><input type="checkbox" id="dark-toggle"'+(dark?' checked':'')+'><span class="toggle-slider"></span></label>'+
           '</div>'+
+          '<label class="settings-row" for="show-outfits-toggle">'+
+            '<span>显示底栏套装入口</span>'+
+            '<span class="toggle"><input type="checkbox" id="show-outfits-toggle"'+(Router.isTabVisible('outfits')?' checked':'')+'><span class="toggle-slider"></span></span>'+
+          '</label>'+
+          '<label class="settings-row" for="show-notes-toggle">'+
+            '<span>显示底栏记录入口</span>'+
+            '<span class="toggle"><input type="checkbox" id="show-notes-toggle"'+(Router.isTabVisible('notes')?' checked':'')+'><span class="toggle-slider"></span></span>'+
+          '</label>'+
           '<button class="settings-row settings-btn" id="export-data">导出数据 <span style="color:var(--text2)">JSON</span></button>'+
           '<button class="settings-row settings-btn danger" id="clear-data">清除所有数据</button>'+
         '</div>'+
@@ -72,6 +80,8 @@
 
     container.querySelector('#overview-entry').addEventListener('click', function(){ Router.go('profile', {sub:'overview'}); });
     container.querySelector('#dark-toggle').addEventListener('change', function(){ var v=this.checked; Storage.set(DARK_KEY,v); applyTheme(v); });
+    container.querySelector('#show-outfits-toggle').addEventListener('change', function(){ Router.setTabVisible('outfits', this.checked); });
+    container.querySelector('#show-notes-toggle').addEventListener('change', function(){ Router.setTabVisible('notes', this.checked); });
     container.querySelector('#export-data').addEventListener('click', function(){
       var all = { outfits_v2: Storage.get('outfits_v2',[]), purple_diamond_log: Storage.get('purple_diamond_log',[]), exported: new Date().toISOString() };
       var blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});

@@ -11,7 +11,7 @@
   function saveWL(d) { Storage.set(WL_KEY, d); }
   function getMM() { return Storage.get(MM_KEY, []); }
   function saveMM(d) { Storage.set(MM_KEY, d); }
-  function getPD() { var l=Storage.get(PD_KEY,[]); if(!l.length){l=[{date:todayStr(),amount:0}];Storage.set(PD_KEY,l);} return l; }
+  function getPD() { return Storage.get(PD_KEY,[]); }
   function savePD(d) { Storage.set(PD_KEY, d); }
   function getSP() { var d=Storage.get(SP_KEY,{}); if(!d.entries){d={startDate:'',entries:[]};} return d; }
   function saveSP(d) { Storage.set(SP_KEY, d); }
@@ -81,9 +81,7 @@
     var pdLog = getPD(); pdLog.sort(function(a,b){return a.date.localeCompare(b.date);});
     var cur = pdLog.length>0 ? pdLog[pdLog.length-1].amount : 0;
 
-    var chartHtml = pdLog.length < 2
-      ? '<div class="chart-empty">添加两条以上记录后显示折线图</div>'
-      : buildChart(pdLog);
+    var chartHtml = '<div id="diamond-chart"></div>';
 
     var listHtml = pdLog.length === 0 ? '<div class="empty-cute">还没有记录</div>'
       : pdLog.slice().reverse().map(function(e,i){
@@ -91,9 +89,9 @@
           var diff = prev ? e.amount - prev.amount : 0;
           var diffStr = diff > 0 ? '<span class="dlog-diff up">+'+diff+'</span>' : (diff < 0 ? '<span class="dlog-diff down">'+diff+'</span>' : '');
           return '<div class="dlog-card">'+
-            '<div class="dlog-left"><div class="dlog-date">'+fmtFull(e.date)+'</div></div>'+
+            '<div class="dlog-left"><div class="dlog-date">'+fmtFull(e.date)+'</div>'+(e.note?'<div class="dlog-note">'+esc(e.note)+'</div>':'')+'<button class="dlog-edit" data-date="'+e.date+'">编辑 / 备注</button></div>'+
             '<div class="dlog-right"><div class="dlog-amt">'+e.amount+'</div>'+diffStr+'</div>'+
-            (pdLog.length>1?'<button class="dlog-del" data-date="'+e.date+'">×</button>':'')+
+            '<button class="dlog-del" aria-label="删除 '+e.date+' 的攒钻记录" data-date="'+e.date+'">×</button>'+
           '</div>';
         }).join('');
 
@@ -106,16 +104,31 @@
       '<div class="dlog-list">'+listHtml+'</div>'+
       '<div class="modal hidden" id="pd-add-modal"><div class="modal-mask"></div><div class="modal-sheet">'+
         '<div class="modal-head"><button class="modal-cancel" id="pd-add-cancel">取消</button><span class="modal-title">添加记录</span><button class="modal-save" id="pd-add-save">保存</button></div>'+
-        '<div class="form-pad"><input type="date" id="pd-add-date" value="'+todayStr()+'"><input type="number" id="pd-add-amount" placeholder="钻石数量" min="0" inputmode="numeric" style="margin-top:12px"></div>'+
+        '<div class="form-pad"><label for="pd-add-date">日期</label><input type="date" id="pd-add-date" value="'+todayStr()+'"><label for="pd-add-amount">钻石数量</label><input type="number" id="pd-add-amount" placeholder="钻石数量" min="0" step="1" inputmode="numeric"><label for="pd-add-note">备注（选填）</label><textarea id="pd-add-note" rows="3" maxlength="200" placeholder="例如：抽海谕遥音池子，花了 12000 钻"></textarea><p class="pd-form-hint" id="pd-form-hint">同一天保存会更新该日记录</p></div>'+
       '</div></div>'+
     '</div>';
 
     container.querySelector('#pd-back').addEventListener('click',function(){ window.history.back(); });
-    container.querySelector('#pd-add-btn').addEventListener('click',function(){ container.querySelector('#pd-add-modal').classList.remove('hidden'); container.querySelector('#pd-add-date').value=todayStr(); container.querySelector('#pd-add-amount').value=''; container.querySelector('#pd-add-amount').focus(); });
+    DiamondChart.mount(container.querySelector('#diamond-chart'), pdLog);
+    function openRecord(date) {
+      var entry = pdLog.find(function(x){return x.date===date;});
+      container.querySelector('#pd-add-date').value=date;
+      container.querySelector('#pd-add-amount').value=entry?entry.amount:'';
+      container.querySelector('#pd-add-note').value=entry?(entry.note||''):'';
+      container.querySelector('#pd-add-modal .modal-title').textContent=entry?'编辑记录':'添加记录';
+      container.querySelector('#pd-add-modal').classList.remove('hidden');
+    }
+    container.querySelector('#pd-add-btn').addEventListener('click',function(){openRecord(todayStr());});
+    container.querySelector('#pd-add-date').addEventListener('change',function(){
+      var entry=pdLog.find(function(x){return x.date===container.querySelector('#pd-add-date').value;});
+      container.querySelector('#pd-add-amount').value=entry?entry.amount:'';
+      container.querySelector('#pd-add-note').value=entry?(entry.note||''):'';
+    });
+    container.querySelectorAll('.dlog-edit').forEach(function(btn){btn.addEventListener('click',function(){openRecord(btn.getAttribute('data-date'));});});
     container.querySelector('#pd-add-cancel').addEventListener('click',function(){ container.querySelector('#pd-add-modal').classList.add('hidden'); });
     container.querySelector('#pd-add-modal .modal-mask').addEventListener('click',function(){ container.querySelector('#pd-add-modal').classList.add('hidden'); });
-    container.querySelector('#pd-add-save').addEventListener('click',function(){ var date=container.querySelector('#pd-add-date').value, amt=parseInt(container.querySelector('#pd-add-amount').value); if(!date||isNaN(amt)||amt<0){container.querySelector('#pd-add-amount').focus();return;} var ex=pdLog.find(function(x){return x.date===date;}); if(ex)ex.amount=amt; else pdLog.push({date:date,amount:amt}); savePD(pdLog); container.querySelector('#pd-add-modal').classList.add('hidden'); renderDiamond(container); });
-    container.querySelectorAll('.dlog-del').forEach(function(btn){ btn.addEventListener('click',function(){ var d=btn.getAttribute('data-date'); var f=pdLog.filter(function(x){return x.date!==d;}); if(!f.length)f=[{date:todayStr(),amount:0}]; savePD(f); renderDiamond(container); }); });
+    container.querySelector('#pd-add-save').addEventListener('click',function(){ var date=container.querySelector('#pd-add-date').value, raw=container.querySelector('#pd-add-amount').value, amt=Number(raw), note=container.querySelector('#pd-add-note').value.trim(); if(!date||raw===''||!Number.isSafeInteger(amt)||amt<0){container.querySelector('#pd-form-hint').textContent='请选择日期，并填写非负整数钻石数量';container.querySelector('#pd-add-amount').focus();return;} var ex=pdLog.find(function(x){return x.date===date;}); if(ex){ex.amount=amt;ex.note=note;} else pdLog.push({date:date,amount:amt,note:note}); pdLog.sort(function(a,b){return a.date.localeCompare(b.date);}); savePD(pdLog); container.querySelector('#pd-add-modal').classList.add('hidden'); renderDiamond(container); });
+    container.querySelectorAll('.dlog-del').forEach(function(btn){ btn.addEventListener('click',function(){ var d=btn.getAttribute('data-date'); var f=pdLog.filter(function(x){return x.date!==d;}); savePD(f); renderDiamond(container); }); });
   }
 
   // ===== 氪金二级页 =====
@@ -176,18 +189,6 @@
       if(eb)eb.addEventListener('click',function(){var d=prompt('修改入坑日期 (YYYY-MM-DD)：',spData.startDate);if(d){spData.startDate=d;saveSP(spData);refreshStart();renderSpending(container);}});
     }
     refreshStart();
-  }
-
-  function buildChart(log) {
-    var vals=log.map(function(p){return p.amount;}), max=Math.max.apply(null,vals), min=Math.min.apply(null,vals);
-    if(max===min)max=min+10;
-    var W=300,H=130,padL=36,padR=12,padT=12,padB=24,pw=W-padL-padR,ph=H-padT-padB;
-    function x(i){return padL+(i/(log.length-1))*pw;}
-    function y(v){return padT+ph-((v-min)/(max-min))*ph;}
-    return '<svg viewBox="0 0 '+W+' '+H+'" class="chart-svg"><defs><linearGradient id="pd-grad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--pink)" stop-opacity="0.15"/><stop offset="100%" stop-color="var(--pink)" stop-opacity="0"/></linearGradient></defs>'+
-      '<path d="'+log.map(function(p,i){return(i===0?'M':'L')+' '+x(i).toFixed(1)+' '+y(p.amount).toFixed(1);}).join(' ')+' L '+x(log.length-1).toFixed(1)+' '+(padT+ph)+' L '+x(0).toFixed(1)+' '+(padT+ph)+' Z" fill="url(#pd-grad2)"/>'+
-      '<path d="'+log.map(function(p,i){return(i===0?'M':'L')+' '+x(i).toFixed(1)+' '+y(p.amount).toFixed(1);}).join(' ')+'" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-      log.map(function(p,i){return '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(p.amount).toFixed(1)+'" r="3" fill="var(--pink)" stroke="#fff" stroke-width="2"/>';}).join('')+'</svg>';
   }
 
   // ===== 主页面局部更新 =====

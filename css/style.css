@@ -585,6 +585,27 @@ input,textarea{user-select:text;-webkit-user-select:text}
 .dlog-del:active{background:var(--bg3);color:var(--pink2)}
 
 .pd-chart-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0}
+.pd-chart-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0 4px}
+.pd-chart-head strong{font-size:14px}
+.pd-chart-range,.pd-time-label,.pd-form-hint{font-size:11px;color:var(--text2)}
+.pd-chart-range{font-variant-numeric:tabular-nums}
+.pd-history-chart{display:block;width:100%;min-height:220px;touch-action:pan-y;user-select:none;cursor:grab;overflow:hidden}
+.pd-history-chart:active{cursor:grabbing}
+.pd-axis-text{fill:var(--text2);font-size:12px}
+.pd-axis-line{stroke:var(--text3);fill:none;stroke-width:1}
+.pd-grid-line{stroke:var(--text3);opacity:.2;stroke-dasharray:3 5}
+.pd-note-guide{stroke:var(--pink);opacity:.35;fill:none;stroke-dasharray:2 3}
+.pd-note-text{fill:var(--text2);font-size:11px;cursor:pointer}
+.pd-chart-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pd-chart-controls button,.dlog-edit{border:1px solid var(--bg3);border-radius:8px;background:var(--bg2);color:var(--pink);padding:6px 10px;font-size:12px;cursor:pointer}
+.pd-chart-controls button:disabled{opacity:.4;cursor:default}
+.pd-time-label{display:block;margin-top:12px}
+.pd-time-range{display:block;width:100%;accent-color:var(--pink);margin:8px 0}
+.pd-point-detail{font-size:12px;line-height:1.6;background:var(--bg2);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+.dlog-note{font-size:12px;line-height:1.5;color:var(--text2);margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.dlog-left{min-width:0}
+.dlog-edit{font-size:11px;margin-top:6px;padding:4px 8px}
+#pd-add-modal .form-pad label{display:block;margin:12px 0 6px;font-size:13px;color:var(--text2)}
 
 /* ===================================================================
  * 氪金页
